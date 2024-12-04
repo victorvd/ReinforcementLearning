@@ -28,11 +28,17 @@ OMNeT++ is the simulation platform used by VEINS. To install OMNeT++ 5.6 (which 
    sudo apt-get update
    sudo apt-get install build-essential gcc g++ python3 python3-dev qt5-qmake qtbase5-dev qtchooser qtbase5-dev-tools \
    libqt5svg5-dev libxml2-dev libpcap-dev pkg-config
+   sudo apt-get install openscenegraph-plugin-osgearth libosgearth-dev
+   sudo apt-get install libopenscenegraph-dev   
+   sudo apt-get install cmake g++ libboost-dev libopenscenegraph-dev libxml2-dev
    ```
+   Warning: Ubuntu 22.04 no longer provides the libosgearth package so osgEarth must be installed from sources. OpenSceneGraph can still be installed using sudo apt-get install libopenscenegraph-dev.
+   
 
 3. **Build OMNeT++**:
    Run the following commands inside the `omnetpp` directory:
    ```bash
+   source setenv
    ./configure
    make
    ```
