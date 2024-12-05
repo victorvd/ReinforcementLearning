@@ -73,23 +73,38 @@ VEINS requires SUMO to simulate traffic. Install SUMO by following these steps:
    ```
 
 2. **Set up OMNeT++ environment**:
-   In the VEINS directory, you need to configure OMNeT++ as a workspace for VEINS. Ensure OMNeT++ is configured and the path is set properly.
+   In the VEINS directory, you need to configure OMNeT++ as a workspace for VEINS. Ensure OMNeT++ is configured and the path is set properly. Verify that opp_make is configured.
 
-3. **Configure VEINS**:
+   ```bash
+   ls /home/victorvd/Downloads/omnetpp/omnetpp-5.7.1/bin/opp_makemake
+   ```
+   If not the case, configure manually.
+
+    ```bash
+    export PATH=/home/victorvd/Downloads/omnetpp/omnetpp-5.7.1/bin:$PATH
+
+    echo 'export PATH=/home/victorvd/Downloads/omnetpp/omnetpp-5.7.1/bin:$PATH' >> ~/.bashrc
+    source ~/.bashrc
+   ```
+
+4. **Configure VEINS**:
    Before building VEINS, you may need to configure it to use OMNeT++ and SUMO. In the `veins` directory, configure it using the following:
    ```bash
-   ./configure --with-omnetpp=<path_to_omnetpp> --with-sumo=<path_to_sumo>
+   export OMNETPP_HOME=/home/victorvd/Downloads/omnetpp/omnetpp-5.7.1
+   export SUMO_HOME=/usr/bin/sumo
+
+   ./configure
    ```
 
    Replace `<path_to_omnetpp>` with the OMNeT++ installation directory and `<path_to_sumo>` with the SUMO installation directory.
 
-4. **Build VEINS**:
+5. **Build VEINS**:
    After configuring, build VEINS with:
    ```bash
    make
    ```
 
-5. **Verify VEINS Installation**:
+6. **Verify VEINS Installation**:
    After building, verify the installation by running the example simulation:
    ```bash
    cd examples/veins
