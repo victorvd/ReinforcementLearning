@@ -158,7 +158,3 @@ sudo apt-get install doxygen valgrind
 
 3. **Version mismatches**:
    Make sure the versions of OMNeT++, SUMO, and VEINS are compatible. VEINS 5.2 works well with OMNeT++ 5.6.
-
-### Conclusion
-
-By following the steps outlined above, you should have VEINS 5.2 running with OMNeT++ and SUMO on your Linux machine. You can now start developing and running vehicular network simulations!
