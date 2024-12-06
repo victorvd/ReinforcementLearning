@@ -105,7 +105,12 @@ VEINS requires SUMO to simulate traffic. Install SUMO by following these steps:
    ```
 
 6. **Verify VEINS Installation**:
-   After building, verify the installation by running the example simulation:
+   Run Sumo 9999 port to start to listen:
+   ```bash
+   cd /omnetpp/veins/bin/
+   ./veins_launchd -vv
+   ```
+   After building, verify the installation by running the example simulation (open a different terminal):
    ```bash
    cd examples/veins
    ./run -u Cmdenv
