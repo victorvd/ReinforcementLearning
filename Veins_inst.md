@@ -31,8 +31,16 @@ OMNeT++ is the simulation platform used by VEINS. To install OMNeT++ 5.6 (which 
    sudo apt-get install openscenegraph-plugin-osgearth libosgearth-dev
    sudo apt-get install cmake g++ libboost-dev libopenscenegraph-dev libxml2-dev
    ```
-
-4. **Build OMNeT++**:
+   
+4. **Build OMNeT++ 6 dependencies**:
+   Install required dependencies if version 6 is built (skip for version 5):
+   ```bash
+   sudo apt install pipx
+   sudo apt-get install build-essential libtool libpng-dev python3-dev
+   python3 -m pip install numpy scipy pandas matplotlib
+   ```
+   
+5. **Build OMNeT++**:
    Run the following commands inside the `omnetpp` directory:
    ```bash
    source setenv
