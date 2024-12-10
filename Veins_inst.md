@@ -117,6 +117,7 @@ VEINS requires SUMO to simulate traffic. Install SUMO by following these steps:
    ```bash
    cd /omnetpp/veins/bin/
    ./veins_launchd -vv
+   (or ./sumo-launchd.py -vv)
    ```
    After building, verify the installation by running the example simulation (open a different terminal):
    ```bash
