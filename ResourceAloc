@@ -1,109 +1,94 @@
-pip install numpy pandas tensorflow gym
-
+from stable_baselines3 import PPO
+from stable_baselines3.common.vec_env import DummyVecEnv
+import gymnasium as gym
+from gymnasium import spaces
 import numpy as np
-import random
-import gym
-from gym import spaces
 
-import tensorflow as tf
+class ComplexSatelliteResourceAllocationEnv(gym.Env):
+    def __init__(self, num_satellites, max_power, max_computing_capacity, max_bandwidth, render_mode=None):
+        super().__init__()
+        self.render_mode = render_mode
+        self.metadata = {"render_modes": ["human", "rgb_array"]}
 
-class SatelliteEnv(gym.Env):
-    def __init__(self):
-        super(SatelliteEnv, self).__init__()
-        self.action_space = spaces.Discrete(3)  # Actions: 0 = Low, 1 = Medium, 2 = High allocation
-        self.observation_space = spaces.Box(low=0, high=100, shape=(1,), dtype=np.float32)  # Resource level
-        self.state = np.array([50])  # Initial resource level
+        self.num_satellites = num_satellites
+        self.max_power = max_power
+        self.max_computing_capacity = max_computing_capacity
+        self.max_bandwidth = max_bandwidth
 
-    def reset(self):
-        self.state = np.array([50])  # Reset to initial state
-        return self.state
+        # Action space: allocate resources for each satellite (power, computing, bandwidth)
+        self.action_space = spaces.Box(low=np.zeros((num_satellites * 3)), high=np.ones((num_satellites * 3)), dtype=np.float32)
+
+        # Observation space: current usage for each satellite (power, computing, bandwidth)
+        self.observation_space = spaces.Box(low=np.zeros((num_satellites * 3)),
+                                             high=np.array([max_power] * num_satellites +
+                                                           [max_computing_capacity] * num_satellites +
+                                                           [max_bandwidth] * num_satellites),
+                                             dtype=np.float32)
+
+        self.state = None
+        self.step_counter = 0
+
+    def reset(self, seed=None, options=None):
+        super().reset(seed=seed)
+        self.state = np.zeros((self.num_satellites * 3), dtype=np.float32)  # Reset to zero usage
+        self.step_counter = 0
+        return self.state, {}  # Return state and empty info dict
 
     def step(self, action):
-        # Simulate resource allocation based on action
-        allocation = action * 25  # Convert action to allocation amount
-        reward = self._calculate_reward(allocation)
-        self.state[0] = max(0, min(100, self.state[0] - allocation))  # Update state
+        action = np.array(action).flatten()  # Flatten action array
 
-        done = self.state[0] == 0  # End if resources are depleted
-        return self.state, reward, done, {}
+        # Calculate resource usage for each satellite
+        power_usage = action[:self.num_satellites] * self.max_power
+        computing_usage = action[self.num_satellites:self.num_satellites*2] * self.max_computing_capacity
+        bandwidth_usage = action[self.num_satellites*2:] * self.max_bandwidth
 
-    def _calculate_reward(self, allocation):
-        # Reward structure based on the efficiency of resource allocation
-        if allocation < 10:
-            return -1  # Penalty for low allocation
-        elif allocation > 60:
-            return -1  # Penalty for over-allocation
-        else:
-            return 1  # Reward for optimal allocation
+        # Calculate rewards based on resource usage
+        reward = 0
+        for i in range(self.num_satellites):
+            if power_usage[i] > self.max_power or computing_usage[i] > self.max_computing_capacity or bandwidth_usage[i] > self.max_bandwidth:
+                reward -= 10  # Penalty for exceeding limits
+            else:
+                reward += (self.max_power - power_usage[i]) + (self.max_computing_capacity - computing_usage[i]) + (self.max_bandwidth - bandwidth_usage[i])
 
+        # Update state with current usage
+        self.state = np.concatenate((power_usage, computing_usage, bandwidth_usage))
 
-class DQNAgent:
-    def __init__(self, state_size, action_size):
-        self.state_size = state_size
-        self.action_size = action_size
-        self.memory = []
-        self.gamma = 0.95    # Discount rate
-        self.epsilon = 1.0   # Exploration rate
-        self.epsilon_min = 0.01
-        self.epsilon_decay = 0.995
-        self.model = self._build_model()
+        done = np.all(self.state >= [self.max_power] * self.num_satellites +
+                      [self.max_computing_capacity] * self.num_satellites +
+                      [self.max_bandwidth] * self.num_satellites)
 
-    def _build_model(self):
-        model = tf.keras.Sequential()
-        model.add(tf.keras.layers.Dense(24, input_dim=self.state_size, activation='relu'))
-        model.add(tf.keras.layers.Dense(24, activation='relu'))
-        model.add(tf.keras.layers.Dense(self.action_size, activation='linear'))
-        model.compile(loss='mse', optimizer=tf.keras.optimizers.Adam(learning_rate=0.001))
-        return model
+        truncated = self.step_counter >= 100
 
-    def remember(self, state, action, reward, next_state, done):
-        self.memory.append((state, action, reward, next_state, done))
+        self.step_counter += 1
 
-    def act(self, state):
-        if np.random.rand() <= self.epsilon:
-            return random.randrange(self.action_size)
-        act_values = self.model.predict(state)
-        return np.argmax(act_values[0])  # Returns action with max Q-value
+        return self.state, reward, done, truncated, {}
 
-    def replay(self, batch_size):
-        minibatch = random.sample(self.memory, batch_size)
+    def render(self):
+        if self.render_mode == "human":
+            print(f"State: {self.state}")
+            for i in range(self.num_satellites):
+                print(f"Satellite {i}: Power usage = {self.state[i]:.2f}, Computing usage = {self.state[self.num_satellites + i]:.2f}, Bandwidth usage = {self.state[2*self.num_satellites + i]:.2f}")
 
-        for state, action, reward, next_state, done in minibatch:
-            target = reward
-            if not done:
-                target += self.gamma * np.amax(self.model.predict(next_state)[0])
-            target_f = self.model.predict(state)
-            target_f[0][action] = target
+# Environment setup
+num_satellites = 3
+max_power = 100
+max_computing_capacity = 100
+max_bandwidth = 50
 
-            self.model.fit(state, target_f, epochs=1, verbose=0)
+env = ComplexSatelliteResourceAllocationEnv(num_satellites, max_power, max_computing_capacity, max_bandwidth, render_mode="human")
+env = DummyVecEnv([lambda: env])
 
-        if self.epsilon > self.epsilon_min:
-            self.epsilon *= self.epsilon_decay
+# Train the PPO agent
+model = PPO("MlpPolicy", env, verbose=1)
+model.learn(total_timesteps=10000)
 
+# Test the model
+obs = env.reset()
+for _ in range(10):
+    action, _states = model.predict(obs)
+    obs, reward, done, info = env.step(action)
+    env.render()
 
-
-if __name__ == "__main__":
-    env = SatelliteEnv()
-    agent = DQNAgent(state_size=1, action_size=3)
-
-    episodes = 20 #1000
-
-    for e in range(episodes):
-        state = env.reset()
-        state = np.reshape(state, [1, agent.state_size])
-
-        for time in range(500):  # Limit steps per episode
-            action = agent.act(state)
-            next_state, reward, done, _ = env.step(action)
-            next_state = np.reshape(next_state, [1, agent.state_size])
-
-            agent.remember(state, action, reward, next_state, done)
-            state = next_state
-
-            if done:
-                print(f"Episode: {e}/{episodes}, score: {time}, e: {agent.epsilon:.2}")
-                break
-
-            if len(agent.memory) > 32:
-                agent.replay(32)
-
+    if isinstance(done, bool) and done:
+        print("Episode finished!")
+        break
