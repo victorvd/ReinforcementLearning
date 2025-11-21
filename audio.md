@@ -1,5 +1,4 @@
 
-```markdown
 # Creating Audio CDs on Ubuntu Using the Terminal
 
 This guide explains how to create a **standard music CD** (playable in most CD players) using command-line tools on Ubuntu. It covers installation, conversion, normalization, device detection, burning, and troubleshooting.
