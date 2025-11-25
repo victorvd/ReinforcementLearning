@@ -42,14 +42,6 @@ Action = [Beam_Weights(10), Scheduler_Weights(2)]
 - **Beam Weights**: Continuous values [0,10] for 10 sector beams
 - **Scheduler Weights**: mMTC and eMBB prioritization weights
 
-## ⚙️ Installation & Setup
-
-### Prerequisites
-- **MATLAB R2021a** or later
-- **Reinforcement Learning Toolbox**
-- **Deep Learning Toolbox**
-- **Statistics and Machine Learning Toolbox**
-
 ### File Structure
 ```
 ntn-drl-resource-allocation/
@@ -64,23 +56,6 @@ ntn-drl-resource-allocation/
 ├── output/                            # Trained agents & results
 └── docs/                              # Documentation
 ```
-
-### Quick Start
-1. **Clone repository**
-   ```matlab
-   !git clone https://github.com/your-username/ntn-drl-resource-allocation.git
-   cd ntn-drl-resource-allocation
-   ```
-
-2. **Run training**
-   ```matlab
-   train_td3_agent;  % Trains DRL agent for 5000 episodes
-   ```
-
-3. **Evaluate performance**
-   ```matlab
-   benchmark_results;  % Compares against baselines
-   ```
 
 ## 🔧 Configuration
 
