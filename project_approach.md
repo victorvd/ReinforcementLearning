@@ -130,7 +130,7 @@ $$\text{Costo}_{\text{Energía}} = \text{Activación}_{\text{Haz}} + \text{Poten
 ### **Nuestra Contribución de DRL**
 
 1.  **Modelado realista**: Simulación basada en trazas con tráfico en ráfagas
-2.  **Aprendizaje multi-objetivo**: Optimización de extremo a extremo de objetivos en competencia
+2.  **Multi-objetivo learning**: Optimización de extremo a extremo de objetivos en competencia
 3.  **Inteligencia distribuida**: Observaciones locales $\to$ optimización global
 4.  **Adaptación en línea**: Aprendizaje continuo a partir de la retroalimentación del entorno
 
@@ -315,7 +315,7 @@ accion_objetivo = actor_objetivo(siguiente_estado) + ruido_recortado
 ### **Red del Actor (Política)**
 
 ```python
-Entrada(40) → FC(256) → ReLU → LayerNorm → FC(256) → ReLU → FC(12) → Tanh → Escala(10)
+Input(40) → FC(256) → ReLU → LayerNorm → FC(256) → ReLU → FC(12) → Tanh → Escala(10)
 
 # Opciones de diseño:
 # - LayerNorm: Maneja distribuciones de entrada no estacionarias
@@ -439,3 +439,122 @@ Este problema demuestra cómo **la aproximación de funciones profunda + la repr
 ```
 
 Esto representa la **vanguardia de lo que es computacionalmente factible** para problemas complejos de control del mundo real utilizando las metodologías actuales de aprendizaje profundo por refuerzo.
+
+-----
+
+# 🎯 Método DRL Agrupado Jerárquico: Explicado
+
+**Nota:** Este enfoque utiliza un **agrupamiento nítido (crisp clustering)** para la ingeniería de características y una **arquitectura de decisión jerárquica** para la escalabilidad, lo que lo clasifica como **DRL Agrupado Jerárquico**. No incorpora lógica difusa formal (fuzzy logic).
+
+## 🏗️ **La Arquitectura Jerárquica**
+
+### **Jerarquía de Decisión de Tres Niveles**
+
+```
+Nivel 3: Ingeniería de Características Basada en Agrupamiento (Estratégico)
+    ↓
+Nivel 2: Selección de Haz a Nivel de Sector (Táctico)  
+    ↓
+Nivel 1: Asignación de Recursos a Nivel de Usuario (Operacional)
+```
+
+## 🔍 **Procesamiento de Agrupamiento a Nivel de Grupo**
+
+### **Agrupamiento de Usuarios (Clustering)**
+
+```matlab
+function obs = buildObservation(obj)
+    % AGRUPAMIENTO NÍTIDO (CRISP CLUSTERING): Usuarios agrupados en 5 grupos nítidos
+    for u = 1:obj.numUsers
+        c_id = obj.getClusterForUser(u, currentSNR(u)); % Asignación nítida
+        % Cada usuario pertenece exactamente a un grupo basado en umbrales de SNR y estado de cola
+    end
+```
+
+### **Definiciones de Grupos Nítidos (Cluster Definitions)**
+
+```matlab
+% Grupo 1: mMTC-Crítico (Cola alta, SNR baja)
+% Grupo 2: mMTC-Normal (Cola baja, cualquier SNR)  
+% Grupo 3: eMBB-Excelente (SNR alta)
+% Grupo 4: eMBB-Bueno (SNR media)
+% Grupo 5: eMBB-Pobre (SNR baja)
+
+% Asignación Nítida: Cada usuario tiene un grado de pertenencia de 1.0 a un grupo y 0.0 a los demás.
+% Ejemplo: Usuario con SNR=10, Cola=3MB → [1.0, 0.0, 0.0, 0.0, 0.0] si cae en el umbral del Grupo 1.
+```
+
+## 🎯 **El Flujo de Decisión Jerárquico**
+
+### **Nivel 3: Estrategia Basada en Grupos (Preprocesamiento)**
+
+```matlab
+% Entrada: Estadísticas de grupo (6 métricas × 5 grupos)
+% Procesamiento: Las estadísticas comprimen la observación de 300 usuarios a un vector de 40D
+% Salida: Estado comprimido de entrada para el agente DRL
+
+cluster_stats = [
+    avg_SNR_cluster1, avg_queue_cluster1, user_count_cluster1, ...
+    avg_SNR_cluster5, avg_queue_cluster5, user_count_cluster5,
+    energy_level, solar_input, total_system_load
+]
+```
+
+### **Nivel 2: Selección a Nivel de Sector (DRL Táctico)**
+
+```matlab
+% Entrada: Estado comprimido (40D)
+% Procesamiento: El agente DRL calcula los pesos del haz (acción)
+% Salida: Qué 4 sectores activar
+
+sectorWeights = action(1:10); % El DRL aprende patrones óptimos de activación de haz
+[~, activeSectors] = maxk(sectorWeights, obj.maxBeams); % Selecciona los 4 primeros
+```
+
+### **Nivel 1: Asignación a Nivel de Usuario (Programador de Reglas Operacionales)**
+
+```matlab
+% Entrada: Usuarios activos + pesos de programador (w_mmtc, w_embb) del DRL
+% Procesamiento: Programador basado en reglas deterministas
+% Salida: Asignación de PRB a usuarios individuales
+
+w_mmtc = action(11); % DRL: Peso para el servicio mMTC
+w_embb = action(12); % DRL: Peso para el servicio eMBB
+
+% La prioridad de usuario se calcula con una fórmula nítida que combina los pesos del DRL con los datos de usuario (cola o SNR)
+for each user in active_sectors:
+    if user.service == mMTC:
+        priority = w_mmtc * user.queue_size % Prioridad lineal
+    else:
+        priority = w_embb * log(1 + user.queue_size) * user.snr % Prioridad proporcional a tasa
+```
+
+## 🎯 **Clasificación Correcta del Problema**
+
+**La implementación actual es:**
+
+```python
+Problema: Aprendizaje Profundo por Refuerzo Jerárquico Agrupado
+(Hierarchical Clustered Deep Reinforcement Learning)
+
+Técnicas Clave:
+1. Compresión del Espacio de Estados a través de Agrupamiento Nítido (Clustering)
+2. Arquitectura de Decisión Jerárquica  
+3. Asignación de Recursos a Múltiples Escalas de Tiempo
+4. Control Híbrido Basado en Reglas + Basado en Aprendizaje
+```
+
+### **Fortalezas del Método DRL Agrupado Jerárquico**
+
+| Aspecto | DRL Agrupado Jerárquico |
+|---------------------|----------------------------------------------------------|
+| **Complejidad del Estado** | Compresión de 300 usuarios a **5 resúmenes de grupo (clusters)** |
+| **Escalabilidad** | La política única opera en resúmenes, no en usuarios individuales |
+| **Arquitectura** | Descomposición de la decisión en capas **Estratégica (Grupo) y Táctica (Haz)** |
+| **Control Híbrido** | El DRL aprende los pesos ($w_{mmtc}, w_{embb}$), el programador usa reglas fijas |
+
+### **La Innovación Clave**
+
+La arquitectura combina la **capacidad de aprendizaje y adaptación del DRL** con la **escalabilidad** proporcionada por la representación del estado basada en el **agrupamiento nítido**. Esto transforma un problema irresoluble de $10^{100}$ estados en un problema de $40$ dimensiones que se puede aprender.
+
+**La implementación actual es un sofisticado DRL jerárquico con ingeniería de características inteligente, no un sistema formal de lógica difusa.**
